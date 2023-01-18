@@ -12,5 +12,7 @@ public class NightConfigFixesForge {
     @SubscribeEvent
     public static void onConstructMod(final FMLConstructModEvent evt) {
         NightConfigFixesConfig.INSTANCE.load();
+//        NightConfigFixes.LOGGER.info("Running custom mixin logic...");
+//        throw new RuntimeException();
     }
 }
