@@ -29,8 +29,8 @@ version = "v${modVersion}-${minecraftVersion}-Forge"
 group = modMavenGroup
 
 minecraft {
-    mappings channel: 'sugarcane', version: "${sugarcaneMappingsVersion}-${sugarcaneMinecraftVersion}"
-//    mappings channel: 'official', version: "${minecraftVersion}"
+//    mappings channel: 'sugarcane', version: "${sugarcaneMappingsVersion}-${sugarcaneMinecraftVersion}"
+    mappings channel: 'official', version: "${minecraftVersion}"
 
     runs {
         client {

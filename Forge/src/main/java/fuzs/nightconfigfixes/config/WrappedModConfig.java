@@ -33,7 +33,7 @@ public class WrappedModConfig extends ModConfig {
         unregister(oldConfig);
         ModContainer container = ModList.get().getModContainerById(oldConfig.getModId()).orElseThrow();
         ModConfig newConfig = new WrappedModConfig(oldConfig);
-//        registerDataChangedListener(container, oldConfig, newConfig);
+        registerDataChangedListener(container, oldConfig, newConfig);
     }
 
     private static void unregister(ModConfig oldConfig) {
@@ -50,8 +50,12 @@ public class WrappedModConfig extends ModConfig {
         Optional<Consumer<IConfigEvent>> configHandler = ObfuscationReflectionHelper.getPrivateValue(ModContainer.class, container, "configHandler");
         if (configHandler != null && configHandler.isPresent()) {
             ObfuscationReflectionHelper.setPrivateValue(ModContainer.class, container, Optional.<Consumer<IConfigEvent>>of(evt -> {
-                if (!(evt instanceof ModConfigEvent.Reloading)) {
-                    ObfuscationReflectionHelper.setPrivateValue(ModConfig.class, oldConfig, newConfig.getConfigData(), "configData");
+                if (evt.getConfig() == newConfig) {
+                    if (evt instanceof ModConfigEvent.Loading) {
+                        evt = IConfigEvent.loading(oldConfig);
+                    } else if (evt instanceof ModConfigEvent.Reloading) {
+                        evt = IConfigEvent.reloading(oldConfig);
+                    }
                 }
                 configHandler.get().accept(evt);
             }), "configHandler");
