@@ -12,10 +12,10 @@ import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingMode;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
+import net.minecraftforge.fml.config.IConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -29,31 +29,7 @@ public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
     public static final ConfigFileTypeHandler TOML = new SafeConfigFileTypeHandler();
     static final Marker CONFIG = MarkerFactory.getMarker("CONFIG");
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final Path defaultConfigPath = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
-
-    public static void backUpConfig(final CommentedFileConfig commentedFileConfig) {
-        backUpConfig(commentedFileConfig, 5); //TODO: Think of a way for mods to set their own preference (include a sanity check as well, no disk stuffing)
-    }
-
-    public static void backUpConfig(final CommentedFileConfig commentedFileConfig, final int maxBackups) {
-        Path bakFileLocation = commentedFileConfig.getNioPath().getParent();
-        String bakFileName = FilenameUtils.removeExtension(commentedFileConfig.getFile().getName());
-        String bakFileExtension = FilenameUtils.getExtension(commentedFileConfig.getFile().getName()) + ".bak";
-        Path bakFile = bakFileLocation.resolve(bakFileName + "-1" + "." + bakFileExtension);
-        try {
-            for (int i = maxBackups; i > 0; i--) {
-                Path oldBak = bakFileLocation.resolve(bakFileName + "-" + i + "." + bakFileExtension);
-                if (Files.exists(oldBak)) {
-                    if (i >= maxBackups) Files.delete(oldBak);
-                    else
-                        Files.move(oldBak, bakFileLocation.resolve(bakFileName + "-" + (i + 1) + "." + bakFileExtension));
-                }
-            }
-            Files.copy(commentedFileConfig.getNioPath(), bakFile);
-        } catch (IOException exception) {
-            LOGGER.warn(CONFIG, "Failed to back up config file {}", commentedFileConfig.getNioPath(), exception);
-        }
-    }
+    private static final Path DEFAULT_CONFIG_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
 
     @Override
     public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
@@ -89,7 +65,7 @@ public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
 
     private boolean setupConfigFile(final ModConfig modConfig, final Path file, final ConfigFormat<?> conf) throws IOException {
         Files.createDirectories(file.getParent());
-        Path p = defaultConfigPath.resolve(modConfig.getFileName());
+        Path p = DEFAULT_CONFIG_PATH.resolve(modConfig.getFileName());
         if (Files.exists(p)) {
             LOGGER.info(CONFIG, "Loading default config file from path {}", p);
             Files.copy(p, file);
@@ -120,7 +96,7 @@ public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
                     ConfigLoadingUtil.tryLoadConfigFile(this.commentedFileConfig);
                     if (!this.modConfig.getSpec().isCorrect(this.commentedFileConfig)) {
                         LOGGER.warn(CONFIG, "Configuration file {} is not correct. Correcting", this.commentedFileConfig.getFile().getAbsolutePath());
-                        SafeConfigFileTypeHandler.backUpConfig(this.commentedFileConfig);
+                        ConfigFileTypeHandler.backUpConfig(this.commentedFileConfig);
                         this.modConfig.getSpec().correct(this.commentedFileConfig);
                         this.commentedFileConfig.save();
                     }
@@ -129,7 +105,7 @@ public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
                 }
                 LOGGER.debug(CONFIG, "Config file {} changed, sending notifies", this.modConfig.getFileName());
                 this.modConfig.getSpec().afterReload();
-//                this.modConfig.fireEvent(IConfigEvent.reloading(this.modConfig));
+                ((WrappedModConfig) this.modConfig).fireEvent(IConfigEvent.reloading(this.modConfig));
             }
         }
     }

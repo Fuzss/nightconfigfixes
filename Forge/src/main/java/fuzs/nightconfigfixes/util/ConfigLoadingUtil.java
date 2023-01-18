@@ -4,8 +4,11 @@ import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import fuzs.nightconfigfixes.NightConfigFixes;
 import fuzs.nightconfigfixes.config.NightConfigFixesConfig;
+import net.minecraftforge.fml.config.ConfigTracker;
+import net.minecraftforge.fml.config.ModConfig;
 
 import java.nio.file.Files;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 public class ConfigLoadingUtil {
@@ -30,5 +33,16 @@ public class ConfigLoadingUtil {
             }
             throw e;
         }
+    }
+
+    public static void unregisterModConfig(ModConfig modConfig) {
+        if (!ConfigTracker.INSTANCE.configSets().get(modConfig.getType()).remove(modConfig) || ConfigTracker.INSTANCE.fileMap().remove(modConfig.getFileName()) == null) {
+            throw new NullPointerException("Mod config %s has not previously been registered".formatted(modConfig.getFileName()));
+        }
+    }
+
+    public static void clearTrackedConfigs() {
+        ConfigTracker.INSTANCE.fileMap().clear();
+        ConfigTracker.INSTANCE.configSets().values().forEach(Set::clear);
     }
 }
