@@ -4,9 +4,9 @@
   "compatibilityLevel": "JAVA_17",
   "package": "fuzs.nightconfigfixes.mixin",
   "refmap": "nightconfigfixes.refmap.json",
+  "plugin": "fuzs.nightconfigfixes.mixin.ModMixinConfigPlugin",
   "mixins": [
-    "ServerLifecycleHooksForgeMixin",
-    "ModStateProviderForgeMixin"
+    "ServerLifecycleHooksForgeMixin"
   ],
   "client": [
   ],

@@ -13,6 +13,8 @@ import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingMode;
 import com.mojang.logging.LogUtils;
 import fuzs.nightconfigfixes.NightConfigFixes;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.IConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
@@ -105,11 +107,15 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
         private final ModConfig modConfig;
         private final CommentedFileConfig commentedFileConfig;
         private final ClassLoader realClassLoader;
+        // Night Config Fixes: store found mod container, we need it for dispatching the config event
+        private final ModContainer modContainer;
 
         ConfigWatcher(final ModConfig modConfig, final CommentedFileConfig commentedFileConfig, final ClassLoader classLoader) {
             this.modConfig = modConfig;
             this.commentedFileConfig = commentedFileConfig;
             this.realClassLoader = classLoader;
+            // Night Config Fixes: store found mod container, we need it for dispatching the config event
+            this.modContainer = ModList.get().getModContainerById(modConfig.getModId()).orElseThrow();
         }
 
         @Override
@@ -131,8 +137,8 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
                 }
                 LOGGER.debug(CONFIG, "Config file {} changed, sending notifies", this.modConfig.getFileName());
                 this.modConfig.getSpec().afterReload();
-                // Night Config Fixes: this watcher is only ever applied to our mod configs, so this is safe to do
-                ((WrappedModConfig) this.modConfig).fireEvent(IConfigEvent.reloading(this.modConfig));
+                // Night Config Fixes: we don't have access to the package-private method on ModConfig, so just copy the implementation here, no need to get all fancy with reflection/method handle
+                this.modContainer.dispatchConfigEvent(IConfigEvent.reloading(this.modConfig));
             }
         }
     }
