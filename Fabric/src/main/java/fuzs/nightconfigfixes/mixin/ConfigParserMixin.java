@@ -30,7 +30,6 @@ interface ConfigParserMixin<C extends Config> {
 
     @Overwrite(remap = false)
     default C parse(Path file, FileNotFoundAction nefAction, Charset charset) {
-        NightConfigFixes.LOGGER.info("Running custom mixin logic...");
         try {
             if (Files.notExists(file) && !nefAction.run(file, this.getFormat())) {
                 return this.getFormat().createConfig();
@@ -47,7 +46,7 @@ interface ConfigParserMixin<C extends Config> {
                         try (InputStream input = Files.newInputStream(file)) {
                             config = this.parse(input, charset);
                         }
-                        NightConfigFixes.LOGGER.warn("Not enough data available for config file {}", file.toAbsolutePath());
+                        NightConfigFixes.LOGGER.warn("Configuration file {} could not be parsed. Correcting", file.toAbsolutePath());
                         return config;
                     }
                 } catch (Throwable t) {
@@ -65,7 +64,6 @@ interface ConfigParserMixin<C extends Config> {
 
     @Overwrite(remap = false)
     default void parse(Path file, Config destination, ParsingMode parsingMode, FileNotFoundAction nefAction, Charset charset) {
-        NightConfigFixes.LOGGER.info("Running custom mixin logic...");
         try {
             if (Files.notExists(file) && !nefAction.run(file, this.getFormat())) {
                 return;
@@ -81,7 +79,7 @@ interface ConfigParserMixin<C extends Config> {
                         try (InputStream input = Files.newInputStream(file)) {
                             this.parse(input, destination, parsingMode, charset);
                         }
-                        NightConfigFixes.LOGGER.warn("Not enough data available for config file {}", file.toAbsolutePath());
+                        NightConfigFixes.LOGGER.warn("Configuration file {} could not be parsed. Correcting", file.toAbsolutePath());
                         return;
                     }
                 } catch (Throwable t) {

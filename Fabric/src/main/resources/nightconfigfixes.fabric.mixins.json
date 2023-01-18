@@ -5,10 +5,7 @@
   "package": "fuzs.nightconfigfixes.mixin",
   "refmap": "nightconfigfixes.refmap.json",
   "mixins": [
-    "ConfigParserMixin",
-    "CocoaBlockMixin",
-    "TomlParserMixin",
-    "CommentedFileConfigMixin"
+    "ConfigParserMixin"
   ],
   "client": [
   ],

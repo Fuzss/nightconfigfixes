@@ -17,7 +17,7 @@ import java.util.Objects;
 public class NightConfigFixesConfig {
     public static final NightConfigFixesConfig INSTANCE;
     private static final String CONFIG_FILE_NAME = NightConfigFixes.MOD_ID + ".toml";
-    private static final Map<String, Object> CONFIG_VALUES = ImmutableMap.<String, Object>builder().put("forceGlobalServerConfigs", true).build();
+    private static final Map<String, Object> CONFIG_VALUES = ImmutableMap.<String, Object>builder().put("forceGlobalServerConfigs", true).put("recreateConfigsWhenParsingFails", true).build();
     private static final ConfigSpec CONFIG_SPEC;
 
     static {

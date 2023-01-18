@@ -5,7 +5,11 @@
   "package": "fuzs.nightconfigfixes.mixin",
   "refmap": "nightconfigfixes.refmap.json",
   "mixins": [
-    "ServerLifecycleHooksForgeMixin"
+    "ConfigFileTypeHandlerForgeMixin",
+    "ConfigWatcherForgeMixin",
+    "ServerLifecycleHooksForgeMixin",
+    "ModConfigForgeAccessor",
+    "ModStateProviderForgeMixin"
   ],
   "client": [
   ],
