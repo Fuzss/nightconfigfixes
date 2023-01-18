@@ -160,7 +160,8 @@ processResources {
     inputs.property "modAuthor", "${modAuthor}"
     inputs.property "minFMLVersion", "${minForgeVersion}".replaceAll("\\..*", "")
     inputs.property "minForgeVersion", "${minForgeVersion}"
-    inputs.property "minecraftVersion", "${minecraftVersion}"
+    inputs.property "minMinecraftVersion", "${minMinecraftVersion}"
+    inputs.property "nextMinecraftVersion", rootProject.getNextVersion("${minMinecraftVersion}")
     inputs.property "minPuzzlesVersion", "${minPuzzlesVersion}"
     inputs.property "packFormat", "${packFormat}"
     inputs.property "modForgeDisplayTest", "${modForgeDisplayTest}"
@@ -179,7 +180,8 @@ processResources {
                 'modAuthor':            "${modAuthor}",
                 'minFMLVersion':        "${minForgeVersion}".replaceAll("\\..*", ""),
                 'minForgeVersion':      "${minForgeVersion}",
-                'minecraftVersion':     "${minecraftVersion}",
+                'minMinecraftVersion':  "${minMinecraftVersion}",
+                'nextMinecraftVersion': rootProject.getNextVersion("${minMinecraftVersion}"),
                 'minPuzzlesVersion':    "${minPuzzlesVersion}",
                 'modForgeDisplayTest':  "${modForgeDisplayTest}"
         )

@@ -46,13 +46,13 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${fabricVersion}"
 //    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
 
-//    // Config Dependencies
-//    implementation 'com.electronwill.night-config:core:3.6.5'
-//    implementation 'com.electronwill.night-config:toml:3.6.5'
+    // Config Dependencies
+    implementation 'com.electronwill.night-config:core:3.6.5'
+    implementation 'com.electronwill.night-config:toml:3.6.5'
 
     // Quality of Life Mods
     modRuntimeOnly "com.terraformersmc:modmenu:4.0.6"
-    modRuntimeOnly "curse.maven:tooltipfix-411557:3820437"
+//    modRuntimeOnly "curse.maven:tooltipfix-411557:3820437"
 
 //    // Puzzles Lib
 //    modImplementation "fuzs.puzzleslib:puzzleslib-fabric:${puzzlesVersion}"
@@ -106,11 +106,12 @@ processResources {
     inputs.property "modAuthor", 				"${modAuthor}"
     inputs.property "minFabricVersion", 		"${minFabricVersion}"
     inputs.property "minFabricApiVersion", 		"${minFabricApiVersion}"
-    inputs.property "minecraftVersion", 		"${minecraftVersion}"
-	inputs.property "minPuzzlesVersion", 		"${minPuzzlesVersion}"
+    inputs.property "minMinecraftVersion", 		"${minMinecraftVersion}"
+    inputs.property "nextMinecraftVersion", 	rootProject.getNextVersion("${minMinecraftVersion}")
+    inputs.property "minPuzzlesVersion", 		"${minPuzzlesVersion}"
     inputs.property "packFormat", 				"${packFormat}"
-	inputs.property "mainEntryPoint", 			"${project.group}.${rootProject.name}Fabric"
-	inputs.property "clientEntryPoint", 		"${project.group}.client.${rootProject.name}FabricClient"
+    inputs.property "mainEntryPoint", 			"${project.group}.${rootProject.name}Fabric"
+    inputs.property "clientEntryPoint", 		"${project.group}.client.${rootProject.name}FabricClient"
     inputs.property "modFabricEnvironment", 	"${modFabricEnvironment}"
 
     // replace stuff in fabric.mod.json and pack.mcmeta
@@ -126,10 +127,11 @@ processResources {
                 'modAuthor':            	"${modAuthor}",
                 'minFabricVersion':     	"${minFabricVersion}",
                 'minFabricApiVersion':  	"${minFabricApiVersion}",
-                'minecraftVersion':  	    "${minecraftVersion}",
-				"minPuzzlesVersion":    	"${minPuzzlesVersion}",
-				"mainEntryPoint": 			"${project.group}.${rootProject.name}Fabric",
-				"clientEntryPoint": 		"${project.group}.client.${rootProject.name}FabricClient",
+                'minMinecraftVersion':  	"${minMinecraftVersion}",
+                "nextMinecraftVersion": 	rootProject.getNextVersion("${minMinecraftVersion}"),
+                "minPuzzlesVersion":    	"${minPuzzlesVersion}",
+                "mainEntryPoint": 			"${project.group}.${rootProject.name}Fabric",
+                "clientEntryPoint": 		"${project.group}.client.${rootProject.name}FabricClient",
                 "modFabricEnvironment":		"${modFabricEnvironment}"
         )
     }

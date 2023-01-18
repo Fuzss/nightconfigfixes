@@ -1,5 +1,6 @@
 package fuzs.nightconfigfixes.mixin;
 
+import fuzs.nightconfigfixes.NightConfigFixes;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -21,12 +22,16 @@ public class ModMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return clazzExists(targetClassName);
+        if (true) return true;
+        targetClassName = targetClassName.replace("/", ".");
+        mixinClassName = mixinClassName.replace("/", ".");
+        NightConfigFixes.LOGGER.info("Should apply mixin {} to {}: {}", mixinClassName, targetClassName, clazzExists(targetClassName, this.getClass().getClassLoader()));
+        return clazzExists(targetClassName, this.getClass().getClassLoader());
     }
 
-    private static boolean clazzExists(String clazzName) {
+    private static boolean clazzExists(String clazzName, ClassLoader loader) {
         try {
-            Class.forName(clazzName);
+            Class.forName(clazzName, false, loader);
             return true;
         } catch (ClassNotFoundException e) {
             return false;
