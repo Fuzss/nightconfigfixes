@@ -22,7 +22,7 @@ import java.nio.file.Path;
  * <p>Also we are forced to use {@link Overwrite} instead of {@link org.spongepowered.asm.mixin.injection.Inject} as the latter is not supported in interfaces.
  */
 @Mixin(targets = "com.electronwill.nightconfig.core.io.ConfigParser")
-interface ConfigParserMixin<C extends Config> {
+interface ConfigParserFabricMixin<C extends Config> {
 
     @Shadow(remap = false)
     ConfigFormat<C> getFormat();

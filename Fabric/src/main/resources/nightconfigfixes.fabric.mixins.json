@@ -5,7 +5,7 @@
   "package": "fuzs.nightconfigfixes.mixin",
   "refmap": "nightconfigfixes.refmap.json",
   "mixins": [
-    "ConfigParserMixin"
+    "ConfigParserFabricMixin"
   ],
   "client": [
   ],
