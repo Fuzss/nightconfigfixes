@@ -12,6 +12,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A wrapped {@link net.minecraftforge.common.ForgeConfigSpec} for the only reason of hooking into {@link #acceptConfig(CommentedConfig)},
+ * so we can 'listen' to it and update <code>configData</code> in the {@link ModConfig} we have wrapped in {@link WrappedModConfig}
+ *
+ * <p>The original <code>configData</code> field needs to be updated, as mods might be holding on to the original {@link ModConfig} instance they created for retrieving that field.
+ * It's the only mutable field in {@link ModConfig}, so there is nothing else we need to worry about.
+ *
+ * <p>The only method that should ever be called on this in {@link ModConfig} is {@link #acceptConfig(CommentedConfig)}, as the getter is overridden to provide the original spec.
+ */
 public class WrappedConfigSpec implements IConfigSpec<WrappedConfigSpec> {
     private final ModConfig modConfig;
     private final IConfigSpec<?> spec;
@@ -27,14 +36,7 @@ public class WrappedConfigSpec implements IConfigSpec<WrappedConfigSpec> {
 
     @Override
     public void acceptConfig(CommentedConfig data) {
-//        ObfuscationReflectionHelper.setPrivateValue(ModConfig.class, this.modConfig, data, "configData");
-        try {
-            Field field = ModConfig.class.getDeclaredField("configData");
-            field.setAccessible(true);
-            MethodHandles.lookup().unreflectSetter(field).invoke(this.modConfig, data);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        ObfuscationReflectionHelper.setPrivateValue(ModConfig.class, this.modConfig, data, "configData");
         this.spec.acceptConfig(data);
     }
 
