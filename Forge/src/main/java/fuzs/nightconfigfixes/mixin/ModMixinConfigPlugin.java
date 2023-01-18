@@ -17,9 +17,9 @@ public class ModMixinConfigPlugin implements IMixinConfigPlugin {
     public void onLoad(String mixinPackage) {
         if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("recreateConfigsWhenParsingFails")) return;
         // use the IMixinConfigPlugin to switch this field as early as possible, couldn't think of something else that loads this early and is easily accessible by the mod
-        // also the TOML field not being final is very odd, let's just hope it stays like that,
-        // otherwise go back to the original approach with wrapping the ModConfig instances which is currecntly disabled
-        ObfuscationReflectionHelper.setPrivateValue(ConfigFileTypeHandler.class, null, new CheckedConfigFileTypeHandler(), "TOML");
+        // also the TOML field not being final is very odd, let's just hope it stays like that
+        // otherwise go back to the original approach with wrapping the ModConfig instances which is currently disabled
+        ObfuscationReflectionHelper.setPrivateValue(ConfigFileTypeHandler.class, null, CheckedConfigFileTypeHandler.TOML, "TOML");
     }
 
     @Override
