@@ -31,10 +31,6 @@ public class NightConfigFixesConfig {
     private CommentedFileConfig configData;
 
     private NightConfigFixesConfig() {
-
-    }
-
-    public void load() {
         this.loadFrom(FMLPaths.CONFIGDIR.get().resolve(CONFIG_FILE_NAME));
     }
 

@@ -16,8 +16,7 @@ abstract class ServerLifecycleHooksForgeMixin {
 
     @Inject(method = "getServerConfigPath", at = @At("HEAD"), cancellable = true, remap = false)
     private static void getServerConfigPath(final MinecraftServer server, CallbackInfoReturnable<Path> callback) {
-        if (NightConfigFixesConfig.INSTANCE.<Boolean>getValue("forceGlobalServerConfigs")) {
-            callback.setReturnValue(FMLPaths.CONFIGDIR.get());
-        }
+        if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("forceGlobalServerConfigs")) return;
+        callback.setReturnValue(FMLPaths.CONFIGDIR.get());
     }
 }

@@ -3,14 +3,16 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  */
 
-package fuzs.nightconfigfixes.util;
+package fuzs.nightconfigfixes.config;
 
 import com.electronwill.nightconfig.core.ConfigFormat;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingMode;
 import com.mojang.logging.LogUtils;
+import fuzs.nightconfigfixes.NightConfigFixes;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.IConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
@@ -25,11 +27,33 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
 
-public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
-    public static final ConfigFileTypeHandler TOML = new SafeConfigFileTypeHandler();
+/**
+ * Copied from Forge, only replaced {@link FileConfig#load()} calls with wrapped calls to better handle a possible {@link ParsingException}
+ * <p>The only reason for this to extend the original Forge class is to be able to return this instance in {@link ModConfig#getHandler()}
+ * <p>Huge props to the Corail Woodcutter mod where this whole idea comes from, the mod can be found here: <a href="https://www.curseforge.com/minecraft/mc-mods/corail-woodcutter">Corail Woodcutter</a>
+ */
+public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
+    public static final ConfigFileTypeHandler TOML = new CheckedConfigFileTypeHandler();
     static final Marker CONFIG = MarkerFactory.getMarker("CONFIG");
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Path DEFAULT_CONFIG_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
+
+    // Night Config Fixes: custom method from Forge Config API Port to better handle config loading when a ParsingException occurs
+    private static void tryLoadConfigFile(FileConfig configData) {
+        try {
+            configData.load();
+        } catch (ParsingException e) {
+            try {
+                Files.delete(configData.getNioPath());
+                configData.load();
+                NightConfigFixes.LOGGER.warn("Configuration file {} could not be parsed. Correcting", configData.getNioPath());
+                return;
+            } catch (Throwable t) {
+                e.addSuppressed(t);
+            }
+            throw e;
+        }
+    }
 
     @Override
     public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
@@ -38,7 +62,8 @@ public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
             final CommentedFileConfig configData = CommentedFileConfig.builder(configPath).sync().preserveInsertionOrder().autosave().onFileNotFound((newfile, configFormat) -> this.setupConfigFile(c, newfile, configFormat)).writingMode(WritingMode.REPLACE).build();
             LOGGER.debug(CONFIG, "Built TOML config for {}", configPath);
             try {
-                ConfigLoadingUtil.tryLoadConfigFile(configData);
+                // Night Config Fixes: wrap config loading to better handle com.electronwill.nightconfig.core.io.ParsingException: Not enough data available
+                tryLoadConfigFile(configData);
             } catch (ParsingException ex) {
                 throw new ConfigLoadingException(c, ex);
             }
@@ -93,7 +118,8 @@ public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
             Thread.currentThread().setContextClassLoader(this.realClassLoader);
             if (!this.modConfig.getSpec().isCorrecting()) {
                 try {
-                    ConfigLoadingUtil.tryLoadConfigFile(this.commentedFileConfig);
+                    // Night Config Fixes: wrap config loading to better handle com.electronwill.nightconfig.core.io.ParsingException: Not enough data available
+                    tryLoadConfigFile(this.commentedFileConfig);
                     if (!this.modConfig.getSpec().isCorrect(this.commentedFileConfig)) {
                         LOGGER.warn(CONFIG, "Configuration file {} is not correct. Correcting", this.commentedFileConfig.getFile().getAbsolutePath());
                         ConfigFileTypeHandler.backUpConfig(this.commentedFileConfig);
@@ -105,12 +131,14 @@ public class SafeConfigFileTypeHandler extends ConfigFileTypeHandler {
                 }
                 LOGGER.debug(CONFIG, "Config file {} changed, sending notifies", this.modConfig.getFileName());
                 this.modConfig.getSpec().afterReload();
+                // Night Config Fixes: this watcher is only ever applied to our mod configs, so this is safe to do
                 ((WrappedModConfig) this.modConfig).fireEvent(IConfigEvent.reloading(this.modConfig));
             }
         }
     }
 
     private static class ConfigLoadingException extends RuntimeException {
+
         public ConfigLoadingException(ModConfig config, Exception cause) {
             super("Failed loading config file " + config.getFileName() + " of type " + config.getType() + " for modid " + config.getModId(), cause);
         }
