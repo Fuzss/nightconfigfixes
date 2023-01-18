@@ -1,6 +1,7 @@
 package fuzs.nightconfigfixes.mixin;
 
 import com.google.common.collect.ImmutableSet;
+import fuzs.nightconfigfixes.NightConfigFixes;
 import fuzs.nightconfigfixes.config.NightConfigFixesConfig;
 import fuzs.nightconfigfixes.config.WrappedModConfig;
 import net.minecraftforge.fml.ModList;
@@ -20,8 +21,12 @@ abstract class ModStateProviderForgeMixin {
     @Inject(method = "lambda$new$3(Lnet/minecraftforge/fml/ModList;)V", at = @At("HEAD"), remap = false)
     private static void run(ModList modList, CallbackInfo callback) {
         if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("recreateConfigsWhenParsingFails")) return;
-        // store all configs in a new set first as we'll be modifying the underlying map
-        Set<ModConfig> configs = ImmutableSet.copyOf(ConfigTracker.INSTANCE.fileMap().values());
-        configs.forEach(WrappedModConfig::replace);
+        try {
+            // store all configs in a new set first as we'll be modifying the underlying map
+            Set<ModConfig> configs = ImmutableSet.copyOf(ConfigTracker.INSTANCE.fileMap().values());
+            configs.forEach(WrappedModConfig::replace);
+        } catch (Exception e) {
+            throw new RuntimeException("%s ran into a problem. DO NOT REPORT THIS TO FORGE!!!".formatted(NightConfigFixes.MOD_NAME), e);
+        }
     }
 }
