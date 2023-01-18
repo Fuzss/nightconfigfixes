@@ -3,7 +3,6 @@ package fuzs.nightconfigfixes.mixin;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigFormat;
 import com.electronwill.nightconfig.core.file.FileNotFoundAction;
-import com.electronwill.nightconfig.core.io.ConfigParser;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.ParsingMode;
 import com.electronwill.nightconfig.core.io.WritingException;
@@ -22,7 +21,7 @@ import java.nio.file.Path;
  * Specify target class as string to maybe help when night config is not present on Fabric, not sure if it really makes a different, after all Mixin is very forgiving when the target class does not exist.
  * <p>Also we are forced to use {@link Overwrite} instead of {@link org.spongepowered.asm.mixin.injection.Inject} as the latter is not supported in interfaces.
  */
-@Mixin(ConfigParser.class)
+@Mixin(targets = "com.electronwill.nightconfig.core.io.ConfigParser")
 interface ConfigParserMixin<C extends Config> {
 
     @Shadow(remap = false)
