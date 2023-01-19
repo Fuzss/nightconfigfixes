@@ -32,5 +32,10 @@
     "fabricloader": ">=${minFabricVersion}",
     "minecraft": ">=${minMinecraftVersion} <${nextMinecraftVersion}",
     "java": ">=17"
+  },
+
+  "recommends": {
+    "com_electronwill_night-config_core": "*",
+    "com_electronwill_night-config_toml": "*"
   }
 }
