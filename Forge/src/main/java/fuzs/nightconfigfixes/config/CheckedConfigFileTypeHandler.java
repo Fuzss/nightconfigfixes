@@ -60,7 +60,13 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     @Override
     public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
         return (c) -> {
-            final Path configPath = configBasePath.resolve(c.getFileName());
+            // Night Config Fixes: implement an option to make server configs global
+            final Path configPath;
+            if (NightConfigFixesConfig.INSTANCE.<Boolean>getValue("forceGlobalServerConfigs")) {
+                configPath = FMLPaths.CONFIGDIR.get().resolve(c.getFileName());
+            } else {
+                configPath = configBasePath.resolve(c.getFileName());
+            }
             final CommentedFileConfig configData = CommentedFileConfig.builder(configPath).sync().preserveInsertionOrder().autosave().onFileNotFound((newfile, configFormat) -> this.setupConfigFile(c, newfile, configFormat)).writingMode(WritingMode.REPLACE).build();
             LOGGER.debug(CONFIG, "Built TOML config for {}", configPath);
             try {
@@ -82,7 +88,13 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
 
     @Override
     public void unload(Path configBasePath, ModConfig config) {
-        Path configPath = configBasePath.resolve(config.getFileName());
+        // Night Config Fixes: implement an option to make server configs global
+        final Path configPath;
+        if (NightConfigFixesConfig.INSTANCE.<Boolean>getValue("forceGlobalServerConfigs")) {
+            configPath = FMLPaths.CONFIGDIR.get().resolve(config.getFileName());
+        } else {
+            configPath = configBasePath.resolve(config.getFileName());
+        }
         try {
             FileWatcher.defaultInstance().removeWatch(configBasePath.resolve(config.getFileName()));
         } catch (RuntimeException e) {

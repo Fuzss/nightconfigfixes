@@ -35,12 +35,14 @@ The issue seems to be exclusive to Windows and is related to config file content
 ## The workaround
 First of all, let's be clear: Night Config Fixes does not implement an actual 'fix' for the mentioned issue, it's just a simple workaround.
 
-The workaround basically just deleted the config file that caused the `ParsingException`, so it can immediately be recreated from Night Config's `FileNotFoundAction`. There is no content to preserve from the original file as it's already blank.
+The workaround basically just deletes the config file that caused the `ParsingException`, so it can immediately be recreated from Night Config's `FileNotFoundAction`. There is no content to preserve from the original file as it's already blank. So deleting the file is the most viable thing to do.
 
 ## Regarding mod packs
-This mod is specifically designed for mod packs, as naturally containing a lot of mods there is a bug chance of this issue occurring.
+This mod is specifically designed for mod packs, as naturally containing a lot of mods there is a big chance of this issue occurring.
 
 Note, that since the original config contents are lost, it is important in the case of the mod pack providing pre-configured configs that they are placed in Forge's `defaultconfigs` directory, and not in the `config` directory. This way, when recreating faulty configs the pre-configured files will simply be copied from `defaultconfigs`. This goes for all types of configs (`CLIENT`, `COMMON` and `SERVER`), as all three types support the `defaultconfigs` directory.
+
+So to make it short: If your mod pack ships pre-configured configs, place them in the `defaultconfigs` directory, not in `config`.
 
 ## The implementation
 Generally, the implementation should be straight forward: Just hook into Night Config where the exception is thrown and where the `FileNotFoundAction` for creating a new file is still available. This is also exactly what's done on Fabric via Mixin.
@@ -53,6 +55,6 @@ So instead, a reflection based approach seems the best option. It's actually qui
 The huge disadvantage of this approach is though, that only Forge mods using Forge's config system are affected. Other mods on Forge, that use Night Config for their own custom config system may still throw an unhandled `ParsingException`.
 
 ## Additional changes
-The Forge version of Night Config Fixes also includes another change: it makes Forge's server config type generate in the global `.minecraft/config/` directory, instead of on a local basis per world. This design decision by Forge simply causes too much confusion and frustration among users, so this mod felt like a good enough opportunity to include a fix for that, too.
+The Forge version of Night Config Fixes also includes another change: It makes Forge's server config type generate in the global `.minecraft/config/` directory, instead of on a local basis per world. This design decision by Forge simply causes too much confusion and frustration among users, so this mod felt like a good enough opportunity to include a fix for that, too.
 
-This feature is optional though, the default behavior can be restored in Night Config Fixes' own config file.
+This feature is optional though, it can be enabled in Night Config Fixes' own config file.
