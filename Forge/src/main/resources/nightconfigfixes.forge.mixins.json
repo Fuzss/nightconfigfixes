@@ -6,6 +6,7 @@
   "refmap": "nightconfigfixes.refmap.json",
   "plugin": "fuzs.nightconfigfixes.mixin.ModMixinConfigPlugin",
   "mixins": [
+    "ModStateProviderForgeMixin"
   ],
   "client": [
   ],

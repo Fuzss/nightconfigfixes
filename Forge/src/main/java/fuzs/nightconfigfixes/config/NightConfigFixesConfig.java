@@ -17,7 +17,7 @@ import java.util.Objects;
 public class NightConfigFixesConfig {
     public static final NightConfigFixesConfig INSTANCE;
     private static final String CONFIG_FILE_NAME = NightConfigFixes.MOD_ID + ".toml";
-    private static final Map<String, Object> CONFIG_VALUES = ImmutableMap.<String, Object>builder().put("forceGlobalServerConfigs", false).put("recreateConfigsWhenParsingFails", true).build();
+    private static final Map<String, Object> CONFIG_VALUES = ImmutableMap.<String, Object>builder().put("forceGlobalServerConfigs", false).put("recreateConfigsWhenParsingFails", ConfigParsingBehavior.REPLACE_CONFIG_HANDLER.toString()).build();
     private static final ConfigSpec CONFIG_SPEC;
 
     static {
@@ -38,7 +38,7 @@ public class NightConfigFixesConfig {
     private void loadFrom(final Path configFile) {
         this.configData = CommentedFileConfig.builder(configFile, TomlFormat.instance()).sync().onFileNotFound(FileNotFoundAction.copyData(Objects.requireNonNull(this.getClass().getResourceAsStream("/" + CONFIG_FILE_NAME)))).autosave().autoreload().writingMode(WritingMode.REPLACE).build();
         try {
-            this.configData.load();
+            CheckedConfigFileTypeHandler.tryLoadConfigFile(this.configData);
         } catch (ParsingException e) {
             throw new RuntimeException("Failed to load %s config from %s".formatted(NightConfigFixes.MOD_NAME, configFile), e);
         }
@@ -54,6 +54,19 @@ public class NightConfigFixesConfig {
         if (!CONFIG_VALUES.containsKey(key)) {
             throw new IllegalArgumentException("%s is not a know config value key".formatted(key));
         }
-        return this.configData.<T>getOptional(key).orElse((T) CONFIG_VALUES.get(key));
+        T value = this.configData.get(key);
+        if (value != null) return value;
+        NightConfigFixes.LOGGER.warn("Configuration file {} is not correct. Using default setting for key {}", FMLPaths.CONFIGDIR.get().resolve(CONFIG_FILE_NAME), key);
+        return (T) CONFIG_VALUES.get(key);
+    }
+
+    public ConfigParsingBehavior getConfigParsingBehavior() {
+        final String key = "recreateConfigsWhenParsingFails";
+        try {
+            return ConfigParsingBehavior.valueOf(this.getValue(key));
+        } catch (Exception ignored) {
+            NightConfigFixes.LOGGER.warn("Configuration file {} is not correct. Using default setting for key {}", FMLPaths.CONFIGDIR.get().resolve(CONFIG_FILE_NAME), key);
+            return ConfigParsingBehavior.valueOf((String) CONFIG_VALUES.get(key));
+        }
     }
 }

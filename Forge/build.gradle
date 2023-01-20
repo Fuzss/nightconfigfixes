@@ -3,13 +3,11 @@ buildscript {
         mavenCentral()
         maven { url = 'https://maven.minecraftforge.net' }
         maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-        maven { url = 'https://maven.moddingx.org' }
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
         classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
         classpath group: 'org.parchmentmc', name: 'librarian', version: '1.+'
-        classpath group: 'org.moddingx', name: 'ModGradle', version: '3.+'
     }
 }
 
@@ -20,7 +18,7 @@ plugins {
 }
 
 apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'org.moddingx.modgradle.mapping'
+apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'eclipse'
 apply plugin: 'org.spongepowered.mixin'
 
@@ -29,8 +27,8 @@ version = "v${modVersion}-${minecraftVersion}-Forge"
 group = modMavenGroup
 
 minecraft {
-//    mappings channel: 'sugarcane', version: "${sugarcaneMappingsVersion}-${sugarcaneMinecraftVersion}"
-    mappings channel: 'official', version: "${minecraftVersion}"
+    mappings channel: 'parchment', version: "${parchmentMappingsVersion}-${parchmentMinecraftVersion}"
+//    mappings channel: 'official', version: "${minecraftVersion}"
 
     runs {
         client {

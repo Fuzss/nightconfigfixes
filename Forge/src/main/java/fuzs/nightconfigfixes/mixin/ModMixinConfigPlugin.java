@@ -1,9 +1,6 @@
 package fuzs.nightconfigfixes.mixin;
 
 import fuzs.nightconfigfixes.config.CheckedConfigFileTypeHandler;
-import fuzs.nightconfigfixes.config.NightConfigFixesConfig;
-import net.minecraftforge.fml.config.ConfigFileTypeHandler;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -15,11 +12,7 @@ public class ModMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("recreateConfigsWhenParsingFails")) return;
-        // use the IMixinConfigPlugin to switch this field as early as possible, couldn't think of something else that loads this early and is easily accessible by the mod
-        // also the TOML field not being final is very odd, let's just hope it stays like that
-        // otherwise go back to the original approach with wrapping the ModConfig instances which is currently disabled
-        ObfuscationReflectionHelper.setPrivateValue(ConfigFileTypeHandler.class, null, CheckedConfigFileTypeHandler.TOML, "TOML");
+        CheckedConfigFileTypeHandler.replaceDefaultConfigHandler();
     }
 
     @Override

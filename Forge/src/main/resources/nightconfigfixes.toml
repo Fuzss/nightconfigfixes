@@ -3,4 +3,7 @@
 forceGlobalServerConfigs = false
 #Config loading from a file config appears to occasionally fail and throw a com.electronwill.nightconfig.core.io.ParsingException: Not enough data available.
 #This workaround catches the exception, and recreates a fresh file to try config loading for again. If loading fails for the new file the original exception is thrown.
-recreateConfigsWhenParsingFails = true
+#Applying this workaround is unfortunately not possible on a libary level due to limitations imposed by Forge.
+#Therefore Night Config Fixes offers two different modes to apply its workaround. Simply test which one works best for you, although the more likely one is selected by default.
+#Allowed Values: NEVER, REPLACE_CONFIG_HANDLER, WRAP_MOD_CONFIGS
+recreateConfigsWhenParsingFails = "REPLACE_CONFIG_HANDLER"

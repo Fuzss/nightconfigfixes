@@ -20,6 +20,7 @@ import net.minecraftforge.fml.config.IConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -35,13 +36,21 @@ import java.util.function.Function;
  * <p>Huge props to the Corail Woodcutter mod where this whole idea comes from, the mod can be found here: <a href="https://www.curseforge.com/minecraft/mc-mods/corail-woodcutter">Corail Woodcutter</a>
  */
 public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
-    public static final ConfigFileTypeHandler TOML = new CheckedConfigFileTypeHandler();
+    static final ConfigFileTypeHandler TOML = new CheckedConfigFileTypeHandler();
     static final Marker CONFIG = MarkerFactory.getMarker("CONFIG");
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final Path DEFAULT_CONFIG_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
+    private static final Path DEFAULT_CONFIGS_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
+
+    public static void replaceDefaultConfigHandler() {
+        if (NightConfigFixesConfig.INSTANCE.getConfigParsingBehavior() != ConfigParsingBehavior.REPLACE_CONFIG_HANDLER) return;
+        // use the IMixinConfigPlugin to switch this field as early as possible, couldn't think of something else that loads this early and is easily accessible by the mod
+        // also the TOML field not being final is very odd, let's just hope it stays like that
+        // otherwise go back to the original approach with wrapping the ModConfig instances which is currently disabled
+        ObfuscationReflectionHelper.setPrivateValue(ConfigFileTypeHandler.class, null, CheckedConfigFileTypeHandler.TOML, "TOML");
+    }
 
     // Night Config Fixes: custom method from Forge Config API Port to better handle config loading when a ParsingException occurs
-    private static void tryLoadConfigFile(FileConfig configData) {
+    static void tryLoadConfigFile(FileConfig configData) {
         try {
             configData.load();
         } catch (ParsingException e) {
@@ -104,7 +113,7 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
 
     private boolean setupConfigFile(final ModConfig modConfig, final Path file, final ConfigFormat<?> conf) throws IOException {
         Files.createDirectories(file.getParent());
-        Path p = DEFAULT_CONFIG_PATH.resolve(modConfig.getFileName());
+        Path p = DEFAULT_CONFIGS_PATH.resolve(modConfig.getFileName());
         if (Files.exists(p)) {
             LOGGER.info(CONFIG, "Loading default config file from path {}", p);
             Files.copy(p, file);
