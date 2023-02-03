@@ -31,11 +31,12 @@
   "depends": {
     "fabricloader": ">=${minFabricVersion}",
     "minecraft": ">=${minMinecraftVersion} <${nextMinecraftVersion}",
+    "com_electronwill_night-config_core": "*",
+    "com_electronwill_night-config_toml": "*",
     "java": ">=17"
   },
 
-  "recommends": {
-    "com_electronwill_night-config_core": "*",
-    "com_electronwill_night-config_toml": "*"
+  "breaks": {
+    "servercore": "*"
   }
 }
