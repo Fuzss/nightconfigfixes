@@ -19,9 +19,10 @@ import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
-import org.slf4j.Logger;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,8 +36,8 @@ import java.util.function.Function;
  */
 public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     static final ConfigFileTypeHandler TOML = new CheckedConfigFileTypeHandler();
-    static final Marker CONFIG = MarkerFactory.getMarker("CONFIG");
-    private static final Logger LOGGER = NightConfigFixes.LOGGER;
+    static final Marker CONFIG = MarkerManager.getMarker("CONFIG");
+    private static final Logger LOGGER = LogManager.getLogger();
     private static final Path DEFAULT_CONFIGS_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
 
     public static void replaceDefaultConfigHandler() {
