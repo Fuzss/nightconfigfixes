@@ -2,7 +2,7 @@
 
 A Minecraft mod. Downloads can be found on [CurseForge](https://www.curseforge.com/members/fuzs_/projects) and [Modrinth](https://modrinth.com/user/Fuzs).
 
-![](https://i.imgur.com/4htIK3r.png)
+![](https://raw.githubusercontent.com/Fuzss/modresources/main/pages/data/nightconfigfixes/banner.png)
 
 ## ABOUT THE PROJECT
 Night Config Fixes exists mostly for one purpose, which is to implement a workaround for a rather common issue related to [Night Config](https://github.com/TheElectronWill/night-config) config loading (the library behind Forge's config system, also used by many mods on Fabric): 
