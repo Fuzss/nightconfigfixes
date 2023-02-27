@@ -11,16 +11,14 @@ import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingMode;
-import com.mojang.logging.LogUtils;
 import fuzs.nightconfigfixes.NightConfigFixes;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
-import net.minecraftforge.fml.config.IConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -38,7 +36,7 @@ import java.util.function.Function;
 public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     static final ConfigFileTypeHandler TOML = new CheckedConfigFileTypeHandler();
     static final Marker CONFIG = MarkerFactory.getMarker("CONFIG");
-    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final Logger LOGGER = NightConfigFixes.LOGGER;
     private static final Path DEFAULT_CONFIGS_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
 
     public static void replaceDefaultConfigHandler() {
@@ -136,7 +134,7 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
             this.commentedFileConfig = commentedFileConfig;
             this.realClassLoader = classLoader;
             // Night Config Fixes: store found mod container, we need it for dispatching the config event
-            this.modContainer = ModList.get().getModContainerById(modConfig.getModId()).orElseThrow();
+            this.modContainer = ModList.get().getModContainerById(modConfig.getModId()).orElseThrow(IllegalStateException::new);
         }
 
         @Override
@@ -159,7 +157,13 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
                 LOGGER.debug(CONFIG, "Config file {} changed, sending notifies", this.modConfig.getFileName());
                 this.modConfig.getSpec().afterReload();
                 // Night Config Fixes: we don't have access to the package-private method on ModConfig, so just copy the implementation here, no need to get all fancy with reflection/method handle
-                this.modContainer.dispatchConfigEvent(IConfigEvent.reloading(this.modConfig));
+                ModConfig.Reloading reloading;
+                try {
+                    reloading = ObfuscationReflectionHelper.findConstructor(ModConfig.Reloading.class, ModConfig.class).newInstance(this.modConfig);
+                } catch (Exception ignored) {
+                    return;
+                }
+                this.modContainer.dispatchConfigEvent(reloading);
             }
         }
     }

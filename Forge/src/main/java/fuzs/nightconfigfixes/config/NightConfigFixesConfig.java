@@ -40,7 +40,7 @@ public class NightConfigFixesConfig {
         try {
             CheckedConfigFileTypeHandler.tryLoadConfigFile(this.configData);
         } catch (ParsingException e) {
-            throw new RuntimeException("Failed to load %s config from %s".formatted(NightConfigFixes.MOD_NAME, configFile), e);
+            throw new RuntimeException(String.format("Failed to load %s config from %s", NightConfigFixes.MOD_NAME, configFile), e);
         }
         if (!CONFIG_SPEC.isCorrect(this.configData)) {
             NightConfigFixes.LOGGER.warn("Configuration file {} is not correct. Correcting", configFile);
@@ -52,7 +52,7 @@ public class NightConfigFixesConfig {
     @SuppressWarnings("unchecked")
     public <T> T getValue(String key) {
         if (!CONFIG_VALUES.containsKey(key)) {
-            throw new IllegalArgumentException("%s is not a know config value key".formatted(key));
+            throw new IllegalArgumentException(String.format("%s is not a know config value key", key));
         }
         T value = this.configData.get(key);
         if (value != null) return value;
