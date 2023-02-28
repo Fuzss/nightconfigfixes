@@ -21,6 +21,7 @@ abstract class PackSelectionModelMixin {
 
     @Inject(method = "method_29640", at = @At("TAIL"), cancellable = true)
     public void getUnselected(Pack pack, CallbackInfoReturnable<PackSelectionModel.Entry> callback) {
+        // Wrap only on resource pack selection screen, we don't want to mess with data packs.
         if (this.repository == Minecraft.getInstance().getResourcePackRepository()) {
             callback.setReturnValue(new ForwardingPackSelectionModelEntry(pack, callback.getReturnValue(), ResourceConfigHandler.getOverride(pack.getId())));
         }
@@ -28,6 +29,7 @@ abstract class PackSelectionModelMixin {
 
     @Inject(method = "method_29644", at = @At("TAIL"), cancellable = true)
     public void getSelected(Pack pack, CallbackInfoReturnable<PackSelectionModel.Entry> callback) {
+        // Wrap only on resource pack selection screen, we don't want to mess with data packs.
         if (this.repository == Minecraft.getInstance().getResourcePackRepository()) {
             callback.setReturnValue(new ForwardingPackSelectionModelEntry(pack, callback.getReturnValue(), ResourceConfigHandler.getOverride(pack.getId())));
         }

@@ -66,8 +66,4 @@ public class ResourceConfigHandler {
         return new PackSelectionOverride(forceCompatible, fixedPosition, required, hidden);
     }
 
-    public record PackSelectionOverride(boolean forceCompatible, boolean fixedPosition, boolean required, boolean hidden) {
-
-        public static final PackSelectionOverride EMPTY = new PackSelectionOverride(false, false, false, false);
-    }
 }

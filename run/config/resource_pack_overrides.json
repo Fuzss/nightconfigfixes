@@ -2,28 +2,16 @@
   "schema_version": 1,
   "failed_reloads_per_session": 5,
   "resource_packs": [
-    "vanilla",
-    "Everycomp Generated Pack",
-    "Fabric Mods",
-    "Supplementaries Generated Pack",
     "file/Stay_True_1.19.zip",
     "file/xali-s-Enchanted-Books-16x-v0.10.1.zip",
     "file/Forbidden_GUI_Dakmode_v3.zip",
     "file/Xaero\u0027s Minimap - Mod Icons.zip",
-    "charmonium/journeyman",
-    "lambdabettergrass/default",
-    "Immersive Weathering Generated Pack",
-    "Snowyspirit Generated Pack",
-    "continuity/default",
     "file/NoBushyLeaves.zip"
   ],
   "default": {
     "force_compatible": true
   },
   "overrides": {
-    "file/Stay_True_1.19.zip": {
-      "required": true
-    },
     "file/Charm_Architects_Palette_integration.zip": {
       "hidden": true
     },

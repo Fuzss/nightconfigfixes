@@ -10,9 +10,9 @@ import net.minecraft.server.packs.repository.PackSource;
 public class ForwardingPackSelectionModelEntry implements PackSelectionModel.Entry, PackAwareSelectionEntry {
     private final Pack pack;
     private final PackSelectionModel.Entry other;
-    private final ResourceConfigHandler.PackSelectionOverride override;
+    private final PackSelectionOverride override;
 
-    public ForwardingPackSelectionModelEntry(Pack pack, PackSelectionModel.Entry other, ResourceConfigHandler.PackSelectionOverride override) {
+    public ForwardingPackSelectionModelEntry(Pack pack, PackSelectionModel.Entry other, PackSelectionOverride override) {
         this.pack = pack;
         this.other = other;
         this.override = override;

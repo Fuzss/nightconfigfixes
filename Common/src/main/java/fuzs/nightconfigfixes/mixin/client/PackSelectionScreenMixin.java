@@ -21,6 +21,7 @@ abstract class PackSelectionScreenMixin extends Screen {
 
     @ModifyVariable(method = "updateList", at = @At("HEAD"))
     private Stream<PackSelectionModel.Entry> updateList(Stream<PackSelectionModel.Entry> models) {
+        // This also runs on the data packs screen, but that's fine since the entries are not wrapped there.
         return models.filter(entry -> !(entry instanceof PackAwareSelectionEntry contextEntry) || !ResourceConfigHandler.getOverride(contextEntry.getPackId()).hidden());
     }
 }
