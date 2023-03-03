@@ -46,10 +46,9 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     public static final Map<String, Map<String, Object>> DEFAULT_CONFIG_VALUES = Maps.newConcurrentMap();
 
     public static void replaceDefaultConfigHandler() {
-        if (NightConfigFixesConfig.INSTANCE.getConfigParsingBehavior() != ConfigParsingBehavior.REPLACE_CONFIG_HANDLER) return;
+        if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("recreateConfigsWhenParsingFails")) return;
         // use the IMixinConfigPlugin to switch this field as early as possible, couldn't think of something else that loads this early and is easily accessible by the mod
-        // also the TOML field not being final is very odd, let's just hope it stays like that
-        // otherwise go back to the original approach with wrapping the ModConfig instances which is currently disabled
+        // also the TOML field not being final is very odd, let's just hope it stays like that, otherwise use unsafe
         ObfuscationReflectionHelper.setPrivateValue(ConfigFileTypeHandler.class, null, CheckedConfigFileTypeHandler.TOML, "TOML");
     }
 
@@ -118,17 +117,18 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     }
 
     private void tryRegisterDefaultConfig(ModConfig modConfig) {
+        if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("correctConfigValuesFromDefaultConfig")) return;
         String fileName = modConfig.getFileName();
         Path path = DEFAULT_CONFIGS_PATH.resolve(fileName);
         if (Files.exists(path)) {
-            LOGGER.info(CONFIG, "Loading default config file from path {}", path);
             try (CommentedFileConfig config = CommentedFileConfig.of(path)) {
                 config.load();
                 Map<String, Object> values = config.valueMap();
                 if (values != null && !values.isEmpty()) {
                     DEFAULT_CONFIG_VALUES.put(fileName.intern(), ImmutableMap.copyOf(values));
                 }
-            } catch (ParsingException ignored) {
+                LOGGER.info(CONFIG, "Loaded default config values from file at path {}", path);
+            } catch (Exception ignored) {
 
             }
         }

@@ -17,7 +17,11 @@ import java.util.Objects;
 public class NightConfigFixesConfig {
     public static final NightConfigFixesConfig INSTANCE;
     private static final String CONFIG_FILE_NAME = NightConfigFixes.MOD_ID + ".toml";
-    private static final Map<String, Object> CONFIG_VALUES = ImmutableMap.<String, Object>builder().put("forceGlobalServerConfigs", false).put("recreateConfigsWhenParsingFails", ConfigParsingBehavior.REPLACE_CONFIG_HANDLER.toString()).build();
+    private static final Map<String, Object> CONFIG_VALUES = ImmutableMap.<String, Object>builder()
+            .put("forceGlobalServerConfigs", false)
+            .put("recreateConfigsWhenParsingFails", true)
+            .put("correctConfigValuesFromDefaultConfig", true)
+            .build();
     private static final ConfigSpec CONFIG_SPEC;
 
     static {
@@ -58,15 +62,5 @@ public class NightConfigFixesConfig {
         if (value != null) return value;
         NightConfigFixes.LOGGER.warn("Configuration file {} is not correct. Using default setting for key {}", FMLPaths.CONFIGDIR.get().resolve(CONFIG_FILE_NAME), key);
         return (T) CONFIG_VALUES.get(key);
-    }
-
-    public ConfigParsingBehavior getConfigParsingBehavior() {
-        final String key = "recreateConfigsWhenParsingFails";
-        try {
-            return ConfigParsingBehavior.valueOf(this.getValue(key));
-        } catch (Exception ignored) {
-            NightConfigFixes.LOGGER.warn("Configuration file {} is not correct. Using default setting for key {}", FMLPaths.CONFIGDIR.get().resolve(CONFIG_FILE_NAME), key);
-            return ConfigParsingBehavior.valueOf((String) CONFIG_VALUES.get(key));
-        }
     }
 }

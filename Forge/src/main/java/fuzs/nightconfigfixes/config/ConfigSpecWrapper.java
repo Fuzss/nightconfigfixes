@@ -1,12 +1,14 @@
 package fuzs.nightconfigfixes.config;
 
-import com.electronwill.nightconfig.core.*;
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.electronwill.nightconfig.core.file.FileConfig;
+import com.electronwill.nightconfig.core.utils.UnmodifiableConfigWrapper;
 import com.google.common.base.Joiner;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.IConfigSpec;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -17,51 +19,41 @@ import static com.electronwill.nightconfig.core.ConfigSpec.CorrectionAction.*;
 import static net.minecraftforge.fml.Logging.CORE;
 
 /**
- * A wrapped {@link net.minecraftforge.common.ForgeConfigSpec} for the only reason of hooking into {@link #acceptConfig(CommentedConfig)},
- * so we can 'listen' to it and update <code>configData</code> in the {@link ModConfig} we have wrapped in {@link WrappedModConfig}
- *
- * <p>The original <code>configData</code> field needs to be updated, as mods might be holding on to the original {@link ModConfig} instance they created for retrieving that field.
- * It's the only mutable field in {@link ModConfig}, so there is nothing else we need to worry about.
- *
- * <p>The only method that should ever be called on this in {@link ModConfig} is {@link #acceptConfig(CommentedConfig)}, as the getter is overridden to provide the original spec.
+ * A wrapped {@link net.minecraftforge.common.ForgeConfigSpec} for the only reason of hooking into {@link #correct(UnmodifiableConfig, CommentedConfig, LinkedList, List, ConfigSpec.CorrectionListener, ConfigSpec.CorrectionListener, boolean)},
+ * so we can modify the behavior for restoring faulty config values, so that instead of directly retrieving the built-in default value from {@link ForgeConfigSpec.ValueSpec#correct(Object)},
+ * we first check if there is a default value defined by a default config file found in <code>defaultconfigs</code>.
  */
-public class WrappedConfigSpec implements IConfigSpec<WrappedConfigSpec> {
+public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec> implements IConfigSpec<ConfigSpecWrapper> {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Joiner DOT_JOINER = Joiner.on(".");
 
-    private final ModConfig modConfig;
-    private final IConfigSpec<?> spec;
     private boolean isCorrecting;
     private boolean isSettingConfig;
 
-    private WrappedConfigSpec(ModConfig modConfig) {
-        this.modConfig = modConfig;
-        this.spec = modConfig.getSpec();
-    }
-
-    public static IConfigSpec<?> of(ModConfig modConfig) {
-        return new WrappedConfigSpec(modConfig);
+    public ConfigSpecWrapper(ForgeConfigSpec config) {
+        super(config);
     }
 
     @Override
     public void acceptConfig(CommentedConfig data) {
-        ObfuscationReflectionHelper.setPrivateValue(ModConfig.class, this.modConfig, data, "configData");
         this.isSettingConfig = true;
         // prevent ForgeConfigSpec from correcting the config, we do this ourselves so our custom correction method may be used
-        this.spec.acceptConfig(data);
+        this.config.acceptConfig(data);
         this.isSettingConfig = false;
-        if (this.spec instanceof ForgeConfigSpec) {
-            if (data != null && !this.isCorrect(data)) {
-                String configName = data instanceof FileConfig ? ((FileConfig) data).getNioPath().toString() : data.toString();
-                LOGGER.warn(CORE, "Configuration file {} is not correct. Correcting", configName);
-                this.correct(data, (action, path, incorrectValue, correctedValue) -> LOGGER.warn(CORE, "Incorrect key {} was corrected from {} to its default, {}. {}", DOT_JOINER.join(path), incorrectValue, correctedValue, incorrectValue == correctedValue ? "This seems to be an error." : ""), (action, path, incorrectValue, correctedValue) -> LOGGER.debug(CORE, "The comment on key {} does not match the spec. This may create a backup.", DOT_JOINER.join(path)));
+        this.afterSetConfig(data);
+    }
 
-                if (data instanceof FileConfig) {
-                    ((FileConfig) data).save();
-                }
+    private void afterSetConfig(CommentedConfig data) {
+        if (data != null && !this.isCorrect(data)) {
+            String configName = data instanceof FileConfig ? ((FileConfig) data).getNioPath().toString() : data.toString();
+            LOGGER.warn(CORE, "Configuration file {} is not correct. Correcting", configName);
+            this.correct(data, (action, path, incorrectValue, correctedValue) -> LOGGER.warn(CORE, "Incorrect key {} was corrected from {} to its default, {}. {}", DOT_JOINER.join(path), incorrectValue, correctedValue, incorrectValue == correctedValue ? "This seems to be an error." : ""), (action, path, incorrectValue, correctedValue) -> LOGGER.debug(CORE, "The comment on key {} does not match the spec. This may create a backup.", DOT_JOINER.join(path)));
+
+            if (data instanceof FileConfig) {
+                ((FileConfig) data).save();
             }
-            this.afterReload();
         }
+        this.afterReload();
     }
 
     @Override
@@ -71,66 +63,28 @@ public class WrappedConfigSpec implements IConfigSpec<WrappedConfigSpec> {
 
     @Override
     public boolean isCorrect(CommentedConfig commentedFileConfig) {
-        if (!(this.spec instanceof ForgeConfigSpec)) {
-            return this.spec.isCorrect(commentedFileConfig);
-        }
-        return this.isSettingConfig || this._isCorrect(commentedFileConfig);
+        return this.isSettingConfig || this.internal$isCorrect(commentedFileConfig);
     }
 
     @Override
     public int correct(CommentedConfig commentedFileConfig) {
-        if (!(this.spec instanceof ForgeConfigSpec)) {
-            return this.spec.correct(commentedFileConfig);
-        }
-        return this._correct(commentedFileConfig);
+        return this.internal$correct(commentedFileConfig);
     }
 
     @Override
     public void afterReload() {
-        this.spec.afterReload();
+        this.config.afterReload();
     }
 
-    @Override
-    public <T> T getRaw(List<String> path) {
-        return this.spec.getRaw(path);
-    }
+    // all methods below copied from net.minecraftforge.common.ForgeConfigSpec with only minor adjustments
 
-    @Override
-    public boolean contains(List<String> path) {
-        return this.spec.contains(path);
-    }
-
-    @Override
-    public int size() {
-        return this.spec.size();
-    }
-
-    @Override
-    public Map<String, Object> valueMap() {
-        return this.spec.valueMap();
-    }
-
-    @Override
-    public Set<? extends Entry> entrySet() {
-        return this.spec.entrySet();
-    }
-
-    @Override
-    public ConfigFormat<?> configFormat() {
-        return this.spec.configFormat();
-    }
-
-    public UnmodifiableConfig getSpec() {
-        return this.spec instanceof ForgeConfigSpec forgeConfigSpec ? forgeConfigSpec.getSpec() : null;
-    }
-
-    public synchronized boolean _isCorrect(CommentedConfig config) {
+    public synchronized boolean internal$isCorrect(CommentedConfig config) {
         LinkedList<String> parentPath = new LinkedList<>();
-        return this.correct(this.getSpec(), config, parentPath, Collections.unmodifiableList(parentPath), (a, b, c, d) -> {
+        return this.correct(this.config, config, parentPath, Collections.unmodifiableList(parentPath), (a, b, c, d) -> {
         }, null, true) == 0;
     }
 
-    public int _correct(CommentedConfig config) {
+    public int internal$correct(CommentedConfig config) {
         return this.correct(config, (action, path, incorrectValue, correctedValue) -> {
         }, null);
     }
@@ -144,7 +98,7 @@ public class WrappedConfigSpec implements IConfigSpec<WrappedConfigSpec> {
         int ret = -1;
         try {
             this.isCorrecting = true;
-            ret = this.correct(this.getSpec(), config, parentPath, Collections.unmodifiableList(parentPath), listener, commentListener, false);
+            ret = this.correct(this.config, config, parentPath, Collections.unmodifiableList(parentPath), listener, commentListener, false);
         } finally {
             this.isCorrecting = false;
         }
@@ -185,7 +139,7 @@ public class WrappedConfigSpec implements IConfigSpec<WrappedConfigSpec> {
                     count += this.correct((Config) specValue, newValue, parentPath, parentPathUnmodifiable, listener, commentListener, dryRun);
                 }
 
-                String newComment = ((ForgeConfigSpec) this.spec).getLevelComment(parentPath);
+                String newComment = ((ForgeConfigSpec) this.config).getLevelComment(parentPath);
                 String oldComment = config.getComment(key);
                 if (!this.stringsMatchIgnoringNewlines(oldComment, newComment)) {
                     if (commentListener != null)
