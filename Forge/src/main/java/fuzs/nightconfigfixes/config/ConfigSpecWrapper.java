@@ -9,6 +9,7 @@ import com.electronwill.nightconfig.core.utils.UnmodifiableConfigWrapper;
 import com.google.common.base.Joiner;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.IConfigSpec;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +29,6 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
     private static final Joiner DOT_JOINER = Joiner.on(".");
 
     private boolean isCorrecting;
-    private boolean isSettingConfig;
 
     public ConfigSpecWrapper(ForgeConfigSpec config) {
         super(config);
@@ -36,14 +36,8 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
 
     @Override
     public void acceptConfig(CommentedConfig data) {
-        this.isSettingConfig = true;
-        // prevent ForgeConfigSpec from correcting the config, we do this ourselves so our custom correction method may be used
-        this.config.acceptConfig(data);
-        this.isSettingConfig = false;
-        this.afterSetConfig(data);
-    }
-
-    private void afterSetConfig(CommentedConfig data) {
+        // do not call ForgeConfigSpec#acceptConfig as it triggers Forge's correction behavior
+        ObfuscationReflectionHelper.setPrivateValue(ForgeConfigSpec.class, this.config, data, "childConfig");
         if (data != null && !this.isCorrect(data)) {
             String configName = data instanceof FileConfig ? ((FileConfig) data).getNioPath().toString() : data.toString();
             LOGGER.warn(CORE, "Configuration file {} is not correct. Correcting", configName);
@@ -63,12 +57,17 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
 
     @Override
     public boolean isCorrect(CommentedConfig commentedFileConfig) {
-        return this.isSettingConfig || this.internal$isCorrect(commentedFileConfig);
+        synchronized (this) {
+            LinkedList<String> parentPath = new LinkedList<>();
+            return this.correct(this.config, commentedFileConfig, parentPath, Collections.unmodifiableList(parentPath), (a, b, c, d) -> {
+            }, null, true) == 0;
+        }
     }
 
     @Override
     public int correct(CommentedConfig commentedFileConfig) {
-        return this.internal$correct(commentedFileConfig);
+        return this.correct(commentedFileConfig, (action, path, incorrectValue, correctedValue) -> {
+        }, null);
     }
 
     @Override
@@ -77,21 +76,6 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
     }
 
     // all methods below copied from net.minecraftforge.common.ForgeConfigSpec with only minor adjustments
-
-    public synchronized boolean internal$isCorrect(CommentedConfig config) {
-        LinkedList<String> parentPath = new LinkedList<>();
-        return this.correct(this.config, config, parentPath, Collections.unmodifiableList(parentPath), (a, b, c, d) -> {
-        }, null, true) == 0;
-    }
-
-    public int internal$correct(CommentedConfig config) {
-        return this.correct(config, (action, path, incorrectValue, correctedValue) -> {
-        }, null);
-    }
-
-    public synchronized int correct(CommentedConfig config, ConfigSpec.CorrectionListener listener) {
-        return this.correct(config, listener, null);
-    }
 
     public synchronized int correct(CommentedConfig config, ConfigSpec.CorrectionListener listener, ConfigSpec.CorrectionListener commentListener) {
         LinkedList<String> parentPath = new LinkedList<>(); //Linked list for fast add/removes
