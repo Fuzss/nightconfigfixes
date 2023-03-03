@@ -34,6 +34,10 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
         super(config);
     }
 
+    public ForgeConfigSpec getSpec() {
+        return this.config;
+    }
+
     @Override
     public void acceptConfig(CommentedConfig data) {
         // do not call ForgeConfigSpec#acceptConfig as it triggers Forge's correction behavior
