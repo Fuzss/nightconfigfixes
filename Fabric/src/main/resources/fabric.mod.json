@@ -37,6 +37,7 @@
   },
 
   "breaks": {
-    "servercore": "*"
+    "servercore": "*",
+    "c2me-base": "*"
   }
 }
