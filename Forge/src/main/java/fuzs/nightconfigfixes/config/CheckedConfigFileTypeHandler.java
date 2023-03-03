@@ -11,6 +11,8 @@ import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingMode;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.mojang.logging.LogUtils;
 import fuzs.nightconfigfixes.NightConfigFixes;
 import net.minecraftforge.fml.ModContainer;
@@ -28,6 +30,7 @@ import org.slf4j.MarkerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -40,6 +43,7 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     static final Marker CONFIG = MarkerFactory.getMarker("CONFIG");
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Path DEFAULT_CONFIGS_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
+    public static final Map<String, Map<String, Object>> DEFAULT_CONFIG_VALUES = Maps.newConcurrentMap();
 
     public static void replaceDefaultConfigHandler() {
         if (NightConfigFixesConfig.INSTANCE.getConfigParsingBehavior() != ConfigParsingBehavior.REPLACE_CONFIG_HANDLER) return;
@@ -84,6 +88,8 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
             } catch (ParsingException ex) {
                 throw new ConfigLoadingException(c, ex);
             }
+            // Night Config Fixes: store values from default config, so we can retrieve them when correcting individual values
+            this.tryRegisterDefaultConfig(c);
             LOGGER.debug(CONFIG, "Loaded TOML config file {}", configPath);
             try {
                 FileWatcher.defaultInstance().addWatch(configPath, new ConfigWatcher(c, configData, Thread.currentThread().getContextClassLoader()));
@@ -108,6 +114,23 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
             FileWatcher.defaultInstance().removeWatch(configBasePath.resolve(config.getFileName()));
         } catch (RuntimeException e) {
             LOGGER.error("Failed to remove config {} from tracker!", configPath, e);
+        }
+    }
+
+    private void tryRegisterDefaultConfig(ModConfig modConfig) {
+        String fileName = modConfig.getFileName();
+        Path path = DEFAULT_CONFIGS_PATH.resolve(fileName);
+        if (Files.exists(path)) {
+            LOGGER.info(CONFIG, "Loading default config file from path {}", path);
+            try (CommentedFileConfig config = CommentedFileConfig.of(path)) {
+                config.load();
+                Map<String, Object> values = config.valueMap();
+                if (values != null && !values.isEmpty()) {
+                    DEFAULT_CONFIG_VALUES.put(fileName.intern(), ImmutableMap.copyOf(values));
+                }
+            } catch (ParsingException ignored) {
+
+            }
         }
     }
 
