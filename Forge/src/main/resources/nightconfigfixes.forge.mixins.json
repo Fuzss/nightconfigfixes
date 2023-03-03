@@ -3,9 +3,9 @@
   "minVersion": "0.8",
   "compatibilityLevel": "JAVA_8",
   "package": "fuzs.nightconfigfixes.mixin",
-  "refmap": "nightconfigfixes.refmap.json",
   "plugin": "fuzs.nightconfigfixes.mixin.ModMixinConfigPlugin",
   "mixins": [
+    "ForgeConfigSpecForgeMixin"
   ],
   "client": [
   ],
