@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog].
 
+## [v3.0.2-1.18.2] - 2023-03-05
+### Fixed
+- Fixed an issue with mods expecting the original `ForgeConfigSpec` to be present when any `ModConfigEvent` is fired
+
 ## [v3.0.1-1.18.2] - 2023-03-03
 ### Changed
 - Night Config Fixes now also handles individual config values being corrected:

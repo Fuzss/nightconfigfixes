@@ -11,6 +11,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.function.Function;
+
 @Mixin(ModStateProvider.class)
 abstract class ModStateProviderForgeMixin {
 
@@ -18,7 +20,8 @@ abstract class ModStateProviderForgeMixin {
     private static void run(ModList modList, CallbackInfo callback) {
         try {
             if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("correctConfigValuesFromDefaultConfig")) return;
-            ConfigTracker.INSTANCE.fileMap().values().forEach(ModConfigSpecUtil::applySpec);
+            ConfigTracker.INSTANCE.fileMap().values().forEach(ModConfigSpecUtil::wrapSpec);
+            ModList.get().applyForEachModContainer(Function.identity()).forEach(ModConfigSpecUtil::wrapConfigHandler);
         } catch (Exception e) {
             throw new RuntimeException("%s ran into a problem. DO NOT REPORT THIS TO FORGE!!!".formatted(NightConfigFixes.MOD_NAME), e);
         }
