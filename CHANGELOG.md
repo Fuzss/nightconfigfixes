@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog].
 
+## [v1.0.3-1.16.5] - 2023-03-05
+### Fixed
+- Hopefully fixed an issue related to other mods loading their config too early so any changes made by Night Config Fixes to `ForgeConfigSpec` would fail to apply
+
 ## [v1.0.2-1.16.5] - 2023-03-03
 ### Changed
 - Night Config Fixes now also handles individual config values being corrected:

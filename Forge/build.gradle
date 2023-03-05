@@ -30,6 +30,8 @@ minecraft {
 //    mappings channel: 'parchment', version: "${parchmentMappingsVersion}-${parchmentMinecraftVersion}"
     mappings channel: 'official', version: "${minecraftVersion}"
 
+    accessTransformer = project.file('src/main/resources/META-INF/accesstransformer.cfg')
+
     runs {
         client {
             workingDirectory project.file('../run')
