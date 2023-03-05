@@ -5,7 +5,6 @@
   "package": "fuzs.nightconfigfixes.mixin",
   "plugin": "fuzs.nightconfigfixes.mixin.ModMixinConfigPlugin",
   "mixins": [
-    "ForgeConfigSpecForgeMixin"
   ],
   "client": [
   ],
