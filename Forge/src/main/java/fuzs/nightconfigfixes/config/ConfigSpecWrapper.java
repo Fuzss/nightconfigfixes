@@ -14,6 +14,7 @@ import static com.electronwill.nightconfig.core.ConfigSpec.CorrectionAction.*;
 
 public class ConfigSpecWrapper {
 
+    // accessed by JavaScript core mod
     public static int correct(UnmodifiableConfig spec, CommentedConfig config, LinkedList<String> parentPath, List<String> parentPathUnmodifiable, ConfigSpec.CorrectionListener listener, ConfigSpec.CorrectionListener commentListener, boolean dryRun, Map<List<String>, String> levelComments) {
         int count = 0;
 

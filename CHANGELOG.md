@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog].
 
+## [v1.0.3-1.16.5] - 2023-03-05
+### Changed
+- Switched changes made to `ForgeConfigSpec` to JavaScript core mod instead of Mixin so that it may load before some other mods load their configs early during Mixin setup
+
 ## [v1.0.2-1.16.5] - 2023-03-03
 ### Changed
 - Night Config Fixes now also handles individual config values being corrected:

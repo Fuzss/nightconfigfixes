@@ -1,6 +1,5 @@
 package fuzs.nightconfigfixes.mixin;
 
-import fuzs.nightconfigfixes.NightConfigFixes;
 import fuzs.nightconfigfixes.config.CheckedConfigFileTypeHandler;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -14,11 +13,6 @@ public class ModMixinConfigPlugin implements IMixinConfigPlugin {
     @Override
     public void onLoad(String mixinPackage) {
         CheckedConfigFileTypeHandler.replaceDefaultConfigHandler();
-        try {
-            NightConfigFixes.LOGGER.info("is present: {}", Class.forName("net.minecraftforge.common.ForgeConfigSpec"));
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
