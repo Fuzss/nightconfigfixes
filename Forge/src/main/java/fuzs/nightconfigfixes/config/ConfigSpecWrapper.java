@@ -20,7 +20,7 @@ import static com.electronwill.nightconfig.core.ConfigSpec.CorrectionAction.*;
 import static net.minecraftforge.fml.Logging.CORE;
 
 /**
- * A wrapped {@link net.minecraftforge.common.ForgeConfigSpec} for the only reason of hooking into {@link #correct(UnmodifiableConfig, CommentedConfig, LinkedList, List, ConfigSpec.CorrectionListener, ConfigSpec.CorrectionListener, boolean)},
+ * A wrapped {@link net.minecraftforge.common.ForgeConfigSpec} for the only reason of hooking into {@link #correct(UnmodifiableConfig, CommentedConfig, Map, LinkedList, List, ConfigSpec.CorrectionListener, ConfigSpec.CorrectionListener, boolean)},
  * so we can modify the behavior for restoring faulty config values, so that instead of directly retrieving the built-in default value from {@link ForgeConfigSpec.ValueSpec#correct(Object)},
  * we first check if there is a default value defined by a default config file found in <code>defaultconfigs</code>.
  */
@@ -45,7 +45,7 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
         if (data != null && !this.isCorrect(data)) {
             String configName = data instanceof FileConfig ? ((FileConfig) data).getNioPath().toString() : data.toString();
             LOGGER.warn(CORE, "Configuration file {} is not correct. Correcting", configName);
-            this.correct(data, (action, path, incorrectValue, correctedValue) -> LOGGER.warn(CORE, "Incorrect key {} was corrected from {} to its default, {}. {}", DOT_JOINER.join(path), incorrectValue, correctedValue, incorrectValue == correctedValue ? "This seems to be an error." : ""), (action, path, incorrectValue, correctedValue) -> LOGGER.debug(CORE, "The comment on key {} does not match the spec. This may create a backup.", DOT_JOINER.join(path)));
+            this.correct(data);
 
             if (data instanceof FileConfig) {
                 ((FileConfig) data).save();
@@ -63,15 +63,35 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
     public boolean isCorrect(CommentedConfig commentedFileConfig) {
         synchronized (this) {
             LinkedList<String> parentPath = new LinkedList<>();
-            return this.correct(this.config, commentedFileConfig, parentPath, Collections.unmodifiableList(parentPath), (a, b, c, d) -> {
-            }, null, true) == 0;
+            return this.correct(this.config, commentedFileConfig, null, parentPath, Collections.unmodifiableList(parentPath), (a, b, c, d) -> {
+            }, (action, path, incorrectValue, correctedValue) -> {
+            }, true) == 0;
         }
     }
 
+    // all methods below copied from net.minecraftforge.common.ForgeConfigSpec with only minor adjustments
+
     @Override
-    public int correct(CommentedConfig commentedFileConfig) {
-        return this.correct(commentedFileConfig, (action, path, incorrectValue, correctedValue) -> {
-        }, null);
+    public synchronized int correct(CommentedConfig config) {
+        LinkedList<String> parentPath = new LinkedList<>(); //Linked list for fast add/removes
+        int ret;
+        try {
+            this.isCorrecting = true;
+            final Map<String, Object> defaultMap;
+            if (config instanceof FileConfig fileConfig) {
+                defaultMap = CheckedConfigFileTypeHandler.DEFAULT_CONFIG_VALUES.get(fileConfig.getNioPath().getFileName().toString().intern());
+            } else {
+                defaultMap = null;
+            }
+            ret = this.correct(this.config, config, defaultMap, parentPath, Collections.unmodifiableList(parentPath), (action, path, incorrectValue, correctedValue) -> {
+                LOGGER.warn(CORE, "Incorrect key {} was corrected from {} to its default, {}. {}", DOT_JOINER.join(path), incorrectValue, correctedValue, incorrectValue == correctedValue ? "This seems to be an error." : "");
+            }, (action, path, incorrectValue, correctedValue) -> {
+                LOGGER.debug(CORE, "The comment on key {} does not match the spec. This may create a backup.", DOT_JOINER.join(path));
+            }, false);
+        } finally {
+            this.isCorrecting = false;
+        }
+        return ret;
     }
 
     @Override
@@ -79,31 +99,11 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
         this.config.afterReload();
     }
 
-    // all methods below copied from net.minecraftforge.common.ForgeConfigSpec with only minor adjustments
-
-    public synchronized int correct(CommentedConfig config, ConfigSpec.CorrectionListener listener, ConfigSpec.CorrectionListener commentListener) {
-        LinkedList<String> parentPath = new LinkedList<>(); //Linked list for fast add/removes
-        int ret = -1;
-        try {
-            this.isCorrecting = true;
-            ret = this.correct(this.config, config, parentPath, Collections.unmodifiableList(parentPath), listener, commentListener, false);
-        } finally {
-            this.isCorrecting = false;
-        }
-        return ret;
-    }
-
-    private int correct(UnmodifiableConfig spec, CommentedConfig config, LinkedList<String> parentPath, List<String> parentPathUnmodifiable, ConfigSpec.CorrectionListener listener, ConfigSpec.CorrectionListener commentListener, boolean dryRun) {
+    private int correct(UnmodifiableConfig spec, CommentedConfig config, @Nullable Map<String, Object> defaultMap, LinkedList<String> parentPath, List<String> parentPathUnmodifiable, ConfigSpec.CorrectionListener listener, ConfigSpec.CorrectionListener commentListener, boolean dryRun) {
         int count = 0;
 
         Map<String, Object> specMap = spec.valueMap();
         Map<String, Object> configMap = config.valueMap();
-        final Map<String, Object> defaultMap;
-        if (config instanceof FileConfig fileConfig) {
-            defaultMap = CheckedConfigFileTypeHandler.DEFAULT_CONFIG_VALUES.get(fileConfig.getNioPath().getFileName().toString().intern());
-        } else {
-            defaultMap = null;
-        }
 
         for (Map.Entry<String, Object> specEntry : specMap.entrySet()) {
             final String key = specEntry.getKey();
@@ -115,7 +115,7 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
 
             if (specValue instanceof Config) {
                 if (configValue instanceof CommentedConfig) {
-                    count += this.correct((Config) specValue, (CommentedConfig) configValue, parentPath, parentPathUnmodifiable, listener, commentListener, dryRun);
+                    count += this.correct((Config) specValue, (CommentedConfig) configValue, defaultMap != null && defaultMap.get(key) instanceof Config defaultConfig ? defaultConfig.valueMap() : null, parentPath, parentPathUnmodifiable, listener, commentListener, dryRun);
                     if (count > 0 && dryRun) return count;
                 } else if (dryRun) {
                     return 1;
@@ -124,14 +124,13 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
                     configMap.put(key, newValue);
                     listener.onCorrect(action, parentPathUnmodifiable, configValue, newValue);
                     count++;
-                    count += this.correct((Config) specValue, newValue, parentPath, parentPathUnmodifiable, listener, commentListener, dryRun);
+                    count += this.correct((Config) specValue, newValue, defaultMap != null && defaultMap.get(key) instanceof Config defaultConfig ? defaultConfig.valueMap() : null, parentPath, parentPathUnmodifiable, listener, commentListener, dryRun);
                 }
 
-                String newComment = ((ForgeConfigSpec) this.config).getLevelComment(parentPath);
+                String newComment = this.config.getLevelComment(parentPath);
                 String oldComment = config.getComment(key);
                 if (!this.stringsMatchIgnoringNewlines(oldComment, newComment)) {
-                    if (commentListener != null)
-                        commentListener.onCorrect(action, parentPathUnmodifiable, oldComment, newComment);
+                    commentListener.onCorrect(action, parentPathUnmodifiable, oldComment, newComment);
 
                     if (dryRun) return 1;
 
@@ -159,8 +158,8 @@ public class ConfigSpecWrapper extends UnmodifiableConfigWrapper<ForgeConfigSpec
                 }
                 String oldComment = config.getComment(key);
                 if (!this.stringsMatchIgnoringNewlines(oldComment, valueSpec.getComment())) {
-                    if (commentListener != null)
-                        commentListener.onCorrect(action, parentPathUnmodifiable, oldComment, valueSpec.getComment());
+
+                    commentListener.onCorrect(action, parentPathUnmodifiable, oldComment, valueSpec.getComment());
 
                     if (dryRun) return 1;
 

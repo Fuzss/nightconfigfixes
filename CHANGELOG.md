@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog].
 
+## [v4.0.6-1.19.2] - 2023-03-09
+### Changed
+- A backup is now created for config files that cannot be parsed before they are deleted 
+### Fixed
+- Fixed `correctConfigValuesFromDefaultConfig` option not working correctly for some config values
+
 ## [v4.0.5-1.19.2] - 2023-03-03
 ### Fixed
 - Fixed an issue with mods expecting the original `ForgeConfigSpec` to be present when any `ModConfigEvent` is fired

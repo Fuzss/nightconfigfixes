@@ -23,6 +23,7 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -39,11 +40,11 @@ import java.util.function.Function;
  * <p>Huge props to the Corail Woodcutter mod where this whole idea comes from, the mod can be found here: <a href="https://www.curseforge.com/minecraft/mc-mods/corail-woodcutter">Corail Woodcutter</a>
  */
 public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
+    public static final Map<String, Map<String, Object>> DEFAULT_CONFIG_VALUES = Maps.newConcurrentMap();
     static final ConfigFileTypeHandler TOML = new CheckedConfigFileTypeHandler();
     static final Marker CONFIG = MarkerFactory.getMarker("CONFIG");
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Path DEFAULT_CONFIGS_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
-    public static final Map<String, Map<String, Object>> DEFAULT_CONFIG_VALUES = Maps.newConcurrentMap();
 
     public static void replaceDefaultConfigHandler() {
         if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("recreateConfigsWhenParsingFails")) return;
@@ -58,6 +59,7 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
             configData.load();
         } catch (ParsingException e) {
             try {
+                backUpConfig(configData.getNioPath(), 5);
                 Files.delete(configData.getNioPath());
                 configData.load();
                 NightConfigFixes.LOGGER.warn("Configuration file {} could not be parsed. Correcting", configData.getNioPath());
@@ -66,6 +68,27 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
                 e.addSuppressed(t);
             }
             throw e;
+        }
+    }
+
+    public static void backUpConfig(final Path commentedFileConfig, final int maxBackups) {
+        if (!Files.exists(commentedFileConfig)) return;
+        Path bakFileLocation = commentedFileConfig.getParent();
+        String bakFileName = FilenameUtils.removeExtension(commentedFileConfig.getFileName().toString());
+        String bakFileExtension = FilenameUtils.getExtension(commentedFileConfig.getFileName().toString()) + ".bak";
+        Path bakFile = bakFileLocation.resolve(bakFileName + "-1" + "." + bakFileExtension);
+        try {
+            for (int i = maxBackups; i > 0; i--) {
+                Path oldBak = bakFileLocation.resolve(bakFileName + "-" + i + "." + bakFileExtension);
+                if (Files.exists(oldBak)) {
+                    if (i >= maxBackups) Files.delete(oldBak);
+                    else
+                        Files.move(oldBak, bakFileLocation.resolve(bakFileName + "-" + (i + 1) + "." + bakFileExtension));
+                }
+            }
+            Files.copy(commentedFileConfig, bakFile);
+        } catch (IOException exception) {
+            LOGGER.warn(CONFIG, "Failed to back up config file {}", commentedFileConfig, exception);
         }
     }
 
@@ -123,11 +146,12 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
         if (Files.exists(path)) {
             try (CommentedFileConfig config = CommentedFileConfig.of(path)) {
                 config.load();
+                // just get the values map, no need to hold on to the resource itself
                 Map<String, Object> values = config.valueMap();
                 if (values != null && !values.isEmpty()) {
                     DEFAULT_CONFIG_VALUES.put(fileName.intern(), ImmutableMap.copyOf(values));
                 }
-                LOGGER.info(CONFIG, "Loaded default config values from file at path {}", path);
+                LOGGER.debug(CONFIG, "Loaded default config values for future corrections from file at path {}", path);
             } catch (Exception ignored) {
 
             }
@@ -166,6 +190,7 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
         public void run() {
             // Force the regular classloader onto the special thread
             Thread.currentThread().setContextClassLoader(this.realClassLoader);
+            Thread.currentThread().setName("Config Watcher");
             if (!this.modConfig.getSpec().isCorrecting()) {
                 try {
                     // Night Config Fixes: wrap config loading to better handle com.electronwill.nightconfig.core.io.ParsingException: Not enough data available
