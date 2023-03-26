@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog].
 
+## [v4.0.7-1.19.2] - 2023-03-26
+### Added
+- Handle `forge-resource-caching.toml`
+
 ## [v4.0.6-1.19.2] - 2023-03-09
 ### Changed
 - A backup is now created for config files that cannot be parsed before they are deleted 

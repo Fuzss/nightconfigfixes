@@ -46,6 +46,7 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Path DEFAULT_CONFIGS_PATH = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
 
+    @SuppressWarnings("DataFlowIssue")
     public static void replaceDefaultConfigHandler() {
         if (!NightConfigFixesConfig.INSTANCE.<Boolean>getValue("recreateConfigsWhenParsingFails")) return;
         // use the IMixinConfigPlugin to switch this field as early as possible, couldn't think of something else that loads this early and is easily accessible by the mod
@@ -54,7 +55,7 @@ public class CheckedConfigFileTypeHandler extends ConfigFileTypeHandler {
     }
 
     // Night Config Fixes: custom method from Forge Config API Port to better handle config loading when a ParsingException occurs
-    static void tryLoadConfigFile(FileConfig configData) {
+    public static void tryLoadConfigFile(FileConfig configData) {
         try {
             configData.load();
         } catch (ParsingException e) {
